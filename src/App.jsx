@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Award, BookOpen, Check, ChevronLeft, ChevronRight, CircleHelp, Gamepad2, Home as HomeIcon, Menu, RotateCcw, Volume2, VolumeX, X } from 'lucide-react';
@@ -237,6 +237,7 @@ function GamePlay({ kind, title, desc, progress, onReward, sound }) {
     window.clearTimeout(feedbackTimer.current);
     feedbackTimer.current = null;
     successRef.current = false;
+    document.querySelectorAll('.fly-to-slot').forEach(tile => { tile.classList.remove('fly-to-slot'); tile.style.removeProperty('--dx'); tile.style.removeProperty('--dy'); });
     setSelected(null); setFeedback(''); setCelebrate(false); setWrongOrder(false); setCounted([]);
     if (kind === 'numbers' || kind === 'letters') {
       const size = isLetter
@@ -392,9 +393,19 @@ function GamePlay({ kind, title, desc, progress, onReward, sound }) {
     setCorrect(value => value + 1);
     onReward(isLetter ? 'letters' : kind === 'count' ? 'count' : kind === 'match' ? 'match' : 'numbers');
   };
+  const flyToSlot = value => {
+    if (!isMissing) return;
+    const tile = document.querySelector(`.answer-tile[data-value="${value}"]`);
+    const slot = document.querySelector('.missing-slot');
+    if (!tile || !slot) return;
+    const a = tile.getBoundingClientRect(), b = slot.getBoundingClientRect();
+    tile.style.setProperty('--dx', `${b.left + b.width / 2 - a.left - a.width / 2}px`);
+    tile.style.setProperty('--dy', `${b.top + b.height / 2 - a.top - a.height / 2}px`);
+    tile.classList.add('fly-to-slot');
+  };
   const checkAnswer = value => {
     if (feedback) return;
-    if (String(value) === String(answer)) award();
+    if (String(value) === String(answer)) { flyToSlot(value); award(); }
     else { showRetryFeedback('Almost! Try one more time!'); say('Almost, try again!', sound); }
   };
   const nextRound = () => { setRound(value => value + 1); createRound(); };
@@ -437,7 +448,7 @@ function GamePlay({ kind, title, desc, progress, onReward, sound }) {
           <button className="button button-primary custom-range-apply" type="button" onClick={applyCustomRange} disabled={!customRangeValid}>Make my number line</button>
           <span className={`custom-range-hint ${customRangeValid ? '' : 'invalid'}`} role="status">{customRangeValid ? 'Choose 2–10 numbers, from 0 to 100.' : 'Pick whole numbers: end after start, with up to 10 numbers.'}</span>
         </div>}
-        {isMissing && <label>Game mode <select value={mode} onChange={e => setMode(e.target.value)}><option value="missing">Find the missing</option><option value="next">What comes next?</option><option value="before">What comes before?</option></select></label>}
+        {isMissing && <div className="mode-pills" role="tablist" aria-label="Game mode">{[['missing','🔍','Find the missing'],['next','➡️','Next number'],['before','⬅️','Previous number']].map(([key, icon, label]) => <button key={key} type="button" role="tab" aria-selected={mode === key} className={`mode-pill ${mode === key ? 'active' : ''}`} onClick={() => setMode(key)}><span>{icon}</span>{isLetter && key !== 'missing' ? label.replace('number', 'letter') : label}</button>)}</div>}
         {isLetter && <label>Letters <select value={letterCase} onChange={e => setLetterCase(e.target.value)}><option value="upper">Uppercase</option><option value="lower">Lowercase</option></select></label>}
         {kind === 'arithmetic' && <label>Operation <select value={operation} onChange={e => setOperation(e.target.value)}><option value="add">Add</option><option value="subtract">Take away</option></select></label>}
         <button className="reset-link" onClick={createRound}><RotateCcw size={16}/> Start over</button>
@@ -445,7 +456,7 @@ function GamePlay({ kind, title, desc, progress, onReward, sound }) {
       <div className="round-progress"><span>Round {round}</span><div><i style={{ width: `${Math.min(100, correct * 10)}%` }}/></div><span>{correct} stars earned</span></div>
       <div className="prompt-wrap">
         {isOrder && <><h2>{isLetter ? 'Put the letters in order!' : 'Put the numbers in order!'}</h2><p>Tap a tile, then tap its spot — or drag it there!</p><button className="listen-again" onClick={speakPrompt}><Volume2 size={17}/> Listen to instructions</button><div className="sequence-slots">{slots.map((value, index) => <button key={index} disabled={Boolean(feedback)} onClick={() => { if (feedback) return; if (selected !== null) { placeTile(selected, index); setSelected(null); } else if (value !== null) setSlots(old => old.map((item, i) => i === index ? null : item)); }} onDragOver={e => e.preventDefault()} onDrop={e => dragDrop(e, index)} className={`sequence-slot ${value !== null ? 'filled' : ''}`} aria-label={`Position ${index + 1}${value === null ? ', empty' : `, ${value}`}`}>{value ?? <span>{index + 1}</span>}</button>)}</div><div className="answer-tiles">{tiles.filter(tile => !slots.includes(tile)).map((value, index) => <button key={value} disabled={Boolean(feedback)} draggable={!feedback} onDragStart={e => dragStart(e, value)} onClick={() => { if (feedback) return; if (selected === null) setSelected(value); else { const empty = slots.indexOf(null); if (empty >= 0) placeTile(selected, empty); setSelected(null); } }} className={`answer-tile tile-${index % 6} ${selected === value ? 'picked' : ''}`} aria-label={`Choose ${value}`}>{value}</button>)}</div>{selected !== null && <p className="tiny-hint">Now tap an empty spot for {selected}!</p>}</>}
-        {isMissing && question && <><h2>{mode === 'next' ? 'What comes next?' : mode === 'before' ? 'What comes before?' : isLetter ? 'Which letter is missing?' : 'Which number is missing?'}</h2><p>Choose the tile that completes the pattern!</p><button className="listen-again" onClick={speakPrompt}><Volume2 size={17}/> Listen to instructions</button><div className="sequence-slots missing-sequence">{question.values.map((value, index) => value === null ? <button key={index} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); checkAnswer(e.dataTransfer.getData('text/plain')); }} className="sequence-slot missing-slot" aria-label="Drop the missing answer here">?</button> : <div key={index} className="sequence-slot filled">{value}</div>)}</div><div className="answer-tiles choice-tiles">{tiles.map((value, index) => <button key={value} draggable onDragStart={e => dragStart(e, value)} onClick={() => checkAnswer(value)} className={`answer-tile tile-${index % 6}`}>{value}</button>)}</div></>}
+        {isMissing && question && <><h2>{mode === 'next' ? 'What comes next?' : mode === 'before' ? 'What comes before?' : isLetter ? 'Which letter is missing?' : 'Which number is missing?'}</h2><p>Choose the tile that completes the pattern!</p><button className="listen-again" onClick={speakPrompt}><Volume2 size={17}/> Listen to instructions</button><div className="sequence-slots missing-sequence">{question.values.map((value, index) => value === null ? <button key={index} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); checkAnswer(e.dataTransfer.getData('text/plain')); }} className="sequence-slot missing-slot" aria-label="Drop the missing answer here">{celebrate ? <span className="slot-landed">{answer}</span> : '?'}</button> : <div key={index} className="sequence-slot filled">{value}</div>)}</div><div className="answer-tiles choice-tiles">{tiles.map((value, index) => <button key={value} data-value={value} draggable onDragStart={e => dragStart(e, value)} onClick={() => checkAnswer(value)} className={`answer-tile tile-${index % 6}`}>{value}</button>)}</div></>}
         {kind === 'count' && question && <><h2>How many {pluralize(question.object)} can you see?</h2><p>Tap each one as you count, then choose your answer!</p><button className="listen-again" onClick={speakPrompt}><Volume2 size={17}/> Listen to the question</button><div className="counting-pictures">{Array.from({ length: question.quantity }, (_, index) => <button key={index} className={`counting-picture ${counted.includes(index) ? 'counted' : ''}`} onClick={() => setCounted(old => old.includes(index) ? old : [...old, index])} aria-label={`Count ${question.object} ${index + 1}`}><Illustration type={question.object} size={62}/></button>)}</div><div className="answer-tiles choice-tiles">{tiles.map((value, index) => <button key={value} onClick={() => checkAnswer(value)} className={`answer-tile tile-${index % 6}`}>{value}</button>)}</div></>}
         {kind === 'quantity-match' && question && <><h2>Find the number for this group!</h2><p>Count the pictures, then choose their number.</p><button className="listen-again" onClick={speakPrompt}><Volume2 size={17}/> Listen to the clue</button><div className="counting-pictures match-quantity-pictures">{Array.from({ length: question.quantity }, (_, index) => <div key={index} className="counting-picture"><Illustration type={question.object} size={62}/></div>)}</div><div className="answer-tiles choice-tiles">{tiles.map((value, index) => <button key={value} onClick={() => checkAnswer(value)} className={`answer-tile tile-${index % 6}`}>{value}</button>)}</div></>}
         {kind === 'compare' && question && <><h2>{question.task === 'more' ? 'Which group has more?' : question.task === 'fewer' ? 'Which group has fewer?' : 'Which groups have the same amount?'}</h2><p>{question.task === 'same' ? 'Tap either group — they have the same amount!' : 'Tap the group with fewer or more pictures!'}</p><button className="listen-again" onClick={speakPrompt}><Volume2 size={17}/> Listen to the question</button><div className="compare-groups">{[['left', question.left], ['right', question.right]].map(([side, total], index) => <button key={side} type="button" onClick={() => checkAnswer(question.task === 'same' ? 'same' : side)} className={`compare-plate plate-${index}`} aria-label={`Group ${side === 'left' ? 'A' : 'B'}, ${total} ${pluralize(question.object)}`}><span className="plate-label">{side === 'left' ? 'A' : 'B'}</span><span className="plate-items">{Array.from({ length: total }, (_, item) => <Illustration key={item} type={question.object} size={48}/>)}</span></button>)}</div></>}
@@ -455,6 +466,7 @@ function GamePlay({ kind, title, desc, progress, onReward, sound }) {
         {kind === 'bingo' && question && <><h2>Find number {question.target}!</h2><p>Can you spot it on your bingo board?</p><button className="listen-again" onClick={speakPrompt}><Volume2 size={17}/> Call my number</button><div className="bingo-board" aria-label="Number bingo board">{question.board.map((value, index) => <button key={value} onClick={() => checkAnswer(value)} className={`bingo-number tile-${index % 6}`} aria-label={`Bingo number ${value}`}>{value}</button>)}</div></>}
         {kind === 'match' && question && <><h2>Which picture starts with “{question.target[0]}”?</h2><p>Listen and find the {question.target[1].toLowerCase()}!</p><button className="listen-again" onClick={speakPrompt}><Volume2 size={17}/> Listen again</button><div className="match-options">{question.options.map(([letter, word, image], index) => <button key={letter} onClick={() => checkAnswer(letter)} className={`match-option option-${index}`}><Illustration type={image} size={82}/><strong>{word}</strong></button>)}</div></>}
       </div>
+      {celebrate && <div className="correct-popup" aria-hidden="true"><div className="popup-confetti">{Array.from({ length: 24 }, (_, i) => <i key={i} style={{ '--x': `${(i * 37) % 100}%`, '--d': `${(i % 6) * 0.12}s`, '--c': ['#ff7a8a','#ffd45c','#7ed6a5','#7fc4ff','#c39bff'][i % 5], '--r': `${i * 47}deg` }}/>)}</div><div className="popup-card"><div className="popup-rays"/><div className="popup-character"><Illustration type="tiger" size={120}/></div><div className="popup-title">{'Correct!'.split('').map((ch, i) => <span key={i} style={{ '--n': i }}>{ch}</span>)}</div><div className="popup-sub">{isMissing && answer !== undefined ? `${answer} fits perfectly!` : 'Great job!'}</div><div className="popup-stars"><b>⭐</b><b>⭐</b><b>⭐</b></div></div></div>}
       <div className={`feedback ${feedback ? (celebrate ? 'positive' : 'gentle') : ''}`} aria-live="polite">{feedback && <><span>{celebrate ? '✨' : '💛'}</span>{feedback}{celebrate && <span> ✨</span>}</>}</div>
       {celebrate && <div className="game-actions"><button className="button button-primary" onClick={nextRound}>Next round <ChevronRight size={19}/></button><Link className="button button-secondary" to={nextGame.path}>Next game <Gamepad2 size={17}/></Link><Link className="button button-secondary" to="/rewards">See my stars</Link></div>}
     </section>
@@ -478,3 +490,5 @@ function Footer() {
 }
 
 export default App;
+
+
