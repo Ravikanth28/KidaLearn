@@ -3,6 +3,7 @@ import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-ro
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Award, BookOpen, Check, ChevronLeft, ChevronRight, CircleHelp, Gamepad2, Home as HomeIcon, Menu, RotateCcw, Volume2, VolumeX, X } from 'lucide-react';
 import { Illustration, pictureWords, Sparkles } from './illustrations.jsx';
+import Phonics from './Phonics.jsx';
 
 const GAME_PATHS = ['/game/numbers-order', '/game/missing-numbers', '/game/alphabet-order', '/game/missing-letters', '/game/counting', '/game/picture-match', '/game/quantity-match', '/game/more-or-less', '/game/make-number', '/game/add-take-away', '/game/number-patterns', '/game/number-bingo'];
 const GAME_CARDS = [
@@ -93,6 +94,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/numbers" element={<LearnMode type="numbers" sound={progress.sound} />} />
           <Route path="/alphabets" element={<LearnMode type="letters" sound={progress.sound} />} />
+          <Route path="/phonics" element={<Phonics sound={progress.sound} />} />
           <Route path="/games/numbers" element={<GameDirectory group="numbers" />} />
           <Route path="/games/alphabets" element={<GameDirectory group="letters" />} />
           <Route path="/game/:gameId" element={<GamePage progress={progress} onReward={updateReward} sound={progress.sound} />} />
@@ -107,7 +109,7 @@ function App() {
 }
 
 function Header({ stars, sound, onToggleSound, menuOpen, setMenuOpen }) {
-  const links = [['Home', '/', HomeIcon], ['Numbers', '/numbers', BookOpen], ['Alphabets', '/alphabets', BookOpen], ['Games', '/games/numbers', Gamepad2], ['My Rewards', '/rewards', Award]];
+  const links = [['Home', '/', HomeIcon], ['Numbers', '/numbers', BookOpen], ['Alphabets', '/alphabets', BookOpen], ['Phonics', '/phonics', Volume2], ['Games', '/games/numbers', Gamepad2], ['My Rewards', '/rewards', Award]];
   return <header className="topbar">
     <div className="topbar-inner">
       <Link className="brand" to="/" aria-label="KidaLearn home"><span className="brand-mark"><Illustration type="tiger" size={48} /></span><span><strong>KidaLearn</strong><small>Learn, Play & Grow!</small></span></Link>
@@ -129,6 +131,7 @@ function Home() {
   const cards = [
     { title: 'Learn Numbers', desc: 'Meet numbers 1–20', path: '/numbers', icon: 'apple', color: 'yellow', tag: 'NUMBER FUN' },
     { title: 'Learn Alphabets', desc: 'Explore A to Z', path: '/alphabets', icon: 'butterfly', color: 'lavender', tag: 'ABC ADVENTURE' },
+    { title: 'Phonics Sounds', desc: 'Hear every letter sound', path: '/phonics', icon: 'tiger', color: 'mint', tag: 'LISTEN & LEARN' },
     { title: 'Number Games', desc: 'Play and practise', path: '/games/numbers', icon: 'ball', color: 'peach', tag: 'LET’S PLAY' },
     { title: 'Alphabet Games', desc: 'Letters come alive', path: '/games/alphabets', icon: 'cat', color: 'pink', tag: 'LET’S PLAY' },
     { title: 'Count the Objects', desc: 'Count cute things', path: GAME_PATHS[4], icon: 'strawberry', color: 'mint', tag: 'COUNT ALONG' },

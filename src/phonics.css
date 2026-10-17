@@ -1,0 +1,16 @@
+.phonics-intro{border-radius:28px;background:#e4f5dc;padding:32px 42px;text-align:left}
+.phonics-intro h1{font:700 47px 'Fredoka',sans-serif;margin:8px 0}
+.phonics-intro h1 span{color:#f18c83}
+.phonics-intro p{margin:0;color:#686c7c;font-weight:700}
+.phonics-intro .phonics-muted{margin-top:8px;color:#b4473d}
+.phonics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:25px}
+.phonics-card{border:0;border-radius:22px;background:#fff;box-shadow:0 4px 18px #46341b12;padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;font-family:inherit;color:#3d3a4b;transition:transform .18s,box-shadow .18s}
+.phonics-card:hover{transform:translateY(-4px)}
+.phonics-card:focus-visible{outline:3px solid #7768c7;outline-offset:2px}
+.phonics-card.playing{outline:3px solid #f18c83;background:#fff6e6;transform:scale(1.04)}
+.phonics-letter{font:700 56px/1 'Fredoka',sans-serif;color:#7768c7}
+.phonics-letter small{font-size:32px;color:#f19a8d;margin-left:6px}
+.phonics-emoji{font-size:44px;line-height:1.1}
+.phonics-word{font:600 18px 'Fredoka',sans-serif}
+.phonics-card svg{color:#7662bc}
+@media(max-width:700px){.phonics-intro{padding:25px 23px;border-radius:23px}.phonics-intro h1{font-size:36px}.phonics-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
